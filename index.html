@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>厨房管家助手 - 小厨</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, #FFE4B5 0%, #FFDAB9 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+#app {
+  width: 100%;
+  max-width: 1000px;
+  height: 90vh;
+  min-height: 600px;
+  background: #FFFDF5;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(255, 140, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+header {
+  background: linear-gradient(135deg, #FF8C00 0%, #FF6600 100%);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  flex-shrink: 0;
+}
+header h1 { font-size: 22px; display: flex; align-items: center; gap: 8px; }
+.main-content { display: flex; flex: 1; min-height: 0; }
+.chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.message {
+  max-width: 80%;
+  padding: 10px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.message.user { align-self: flex-end; background: #FF8C00; color: #fff; border-bottom-right-radius: 4px; }
+.message.bot { align-self: flex-start; background: #F0F0F0; color: #333; border-bottom-left-radius: 4px; }
+.message.bot .name-tag { font-size: 12px; color: #FF8C00; margin-bottom: 2px; font-weight: 600; }
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  padding: 16px;
+  border-left: 1px solid #FFE0B5;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sidebar h3 { font-size: 14px; color: #FF6600; }
+.inventory-box {
+  background: #FFF8F0;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.inventory-box p { margin: 4px 0; color: #555; }
+.persona-box { background: #FFF8F0; border-radius: 12px; padding: 12px; }
+.persona-item { display: flex; justify-content: space-between; margin: 8px 0; font-size: 12px; }
+.persona-bar { width: 100px; height: 6px; background: #FFE0B5; border-radius: 3px; overflow: hidden; }
+.persona-fill { height: 100%; background: #FF8C00; border-radius: 3px; }
+.input-area {
+  display: flex;
+  padding: 12px 20px 16px;
+  gap: 10px;
+  border-top: 1px solid #FFE0B5;
+  flex-shrink: 0;
+}
+.input-area input {
+  flex: 1;
+  padding: 10px 16px;
+  border: 2px solid #FFE0B5;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+}
+.input-area input:focus { border-color: #FF8C00; }
+.input-area button {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #FF8C00, #FF6600);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.typing {
+  align-self: flex-start;
+  background: #F0F0F0;
+  padding: 10px 18px;
+  border-radius: 16px;
+  display: flex;
+  gap: 4px;
+}
+.typing span { width: 8px; height: 8px; background: #FF8C00; border-radius: 50%; animation: bounce 1.2s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-8px); } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🍳 厨房管家 · 小厨</h1>
+    <div>😋 随时为您服务</div>
+  </header>
+
+  <div class="main-content">
+    <div class="chat-area">
+      <div id="messages">
+        <div class="message bot">
+          <div class="name-tag">🍳 小厨</div>
+          主人好！我是厨房管家小厨～让我看看冰箱里有什么...<br>
+          冰箱里有：西红柿3个、鸡蛋6个、青椒2个、土豆4个、猪肉300克<br>
+          想吃什么菜？我可以推荐哦！😋
+        </div>
+      </div>
+      <div class="input-area">
+        <input type="text" id="user-input" placeholder="问小厨问题，如：今天吃什么？" autofocus>
+        <button id="send-btn">发送</button>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="inventory-box">
+        <h3>🧊 冰箱库存</h3>
+        <div id="inventory-list">加载中...</div>
+      </div>
+      <div class="persona-box">
+        <h3>🎭 助手性格</h3>
+        <div id="persona-stats">加载中...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const messagesEl = document.getElementById('messages');
+const userInput = document.getElementById('user-input');
+const sendBtn = document.getElementById('send-btn');
+const inventoryList = document.getElementById('inventory-list');
+const personaStats = document.getElementById('persona-stats');
+
+function addMessage(text, role) {
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  if (role === 'bot') {
+    div.innerHTML = `<div class="name-tag">🍳 小厨</div>${text}`;
+  } else {
+    div.textContent = text;
+  }
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'typing';
+  div.id = 'typing-indicator';
+  div.innerHTML = '<span></span><span></span><span></span>';
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function updateInventory(inventory) {
+  if (!inventory || Object.keys(inventory).length === 0) {
+    inventoryList.innerHTML = '<p>冰箱是空的～快去采购吧！</p>';
+    return;
+  }
+  let html = '';
+  for (const [name, info] of Object.entries(inventory)) {
+    if (info.quantity > 0) {
+      html += `<p>🍅 ${name}: ${info.quantity}${info.unit || '个'}</p>`;
+    }
+  }
+  inventoryList.innerHTML = html || '<p>冰箱是空的～</p>';
+}
+
+function updatePersona(params) {
+  if (!params) return;
+  const keys = ['热情程度', '细致程度', '效率优先程度', '健康关注程度'];
+  let html = '';
+  for (const key of keys) {
+    const value = params[key] || 0.5;
+    html += `
+      <div class="persona-item">
+        <span>${key}</span>
+        <div class="persona-bar">
+          <div class="persona-fill" style="width: ${value * 100}%"></div>
+        </div>
+        <span>${Math.round(value * 100)}%</span>
+      </div>
+    `;
+  }
+  personaStats.innerHTML = html;
+}
+
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  userInput.value = '';
+  addMessage(text, 'user');
+  showTyping();
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    hideTyping();
+    addMessage(data.reply, 'bot');
+    if (data.inventory) {
+      const invRes = await fetch('/inventory');
+      const invData = await invRes.json();
+      updateInventory(invData.inventory);
+    }
+    if (data.persona_params) {
+      updatePersona(data.persona_params);
+    }
+  } catch (err) {
+    hideTyping();
+    addMessage('😅 网络出了点问题，主人再试试？', 'bot');
+  }
+}
+
+async function loadStatus() {
+  try {
+    const res = await fetch('/inventory');
+    const data = await res.json();
+    updateInventory(data.inventory);
+
+    const statusRes = await fetch('/status');
+    const statusData = await statusRes.json();
+    updatePersona(statusData.persona_params);
+  } catch (err) {
+    console.log('加载状态失败');
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+userInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+loadStatus();
+</script>
+</body>
+</html>
